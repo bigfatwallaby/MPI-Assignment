@@ -46,6 +46,12 @@ program MontyParallel
                 write(*,*) rank, "sending ", Ni, " to ", i
                 call MPI_SEND(Ni, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)
 
+                !if error, stop 
+                if (err /= 0) then  
+                    write(*,*) err
+                    stop
+                end if
+
 
             end do
             ! send remainder to last guy

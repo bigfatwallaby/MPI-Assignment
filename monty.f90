@@ -7,7 +7,7 @@ program MontyParallel
     real :: result
     real :: MonteCarloIntegrate
     real :: exact, error, receive, tempSend
-    integer :: Nmax, N, i, ii, Ni, counterR, counterS
+    integer :: Nmax, N, i, Ni, counterR, counterS
     integer rank, size, err
 
     call random_seed(size = seed_size)
@@ -23,10 +23,10 @@ program MontyParallel
         write(*,*) size
     end if
 
-    Nmax = 100000000
+    Nmax = 2**30
     exact = 0.80656718084400884701112678335185691868951443065656
     
-    N = 1
+    N = 2**3
     
     counterS = 0
     counterR = 0
@@ -37,45 +37,26 @@ program MontyParallel
         do while(N<Nmax)
             !send out all the tasks
             write(*,*) rank, "sending out tasks for N: ", N
+
             do i = 1, (size - 2),1
-                ii = i
                 Ni = floor(real(N)/(size-1))
                 !send chunks to ppl
-                write(*,*) rank, "sending ", Ni, " to ", ii
-                call MPI_SEND(Ni, 1, MPI_INTEGER, ii, counterS, MPI_COMM_WORLD, err)
-                write(*,*) rank, "i: ",i, "ii: ", ii
-
-                !if error, stop 
-                if (err /= 0) then  
-                    write(*,*) err
-                    stop
-                end if
+                write(*,*) rank, "sending ", Ni, " to ", i
+                call MPI_SEND(Ni, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)
 
             end do
             ! send remainder to last guy
-            write(*,*) rank, "sending out ", N-Ni*(size-1), " to ",  (size - 1)
-            call MPI_SEND(N-Ni*(size-1), 1, MPI_INTEGER, (size - 1), counterS, MPI_COMM_WORLD, err)
+            write(*,*) rank, "sending out ", N-Ni*(size-2), " to ",  (size - 1)
+            call MPI_SEND(N-Ni*(size-2), 1, MPI_INTEGER, (size - 1), counterS, MPI_COMM_WORLD, err)
 
-            stop
-
-            !if error, stop 
-            if (err /= 0) then  
-                write(*,*) err
-                stop
-            end if
 
             counterS = counterS + 1
 
             ! recieve all results
             write(*,*) rank, " waiting to receive all results"
             call MPI_REDUCE(tempSend, result, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
-            write(*,*) rank, " received all results"
+            write(*,*) rank, " received all results", result
 
-            !if error, stop 
-            if (err /= 0) then  
-                write(*,*) err
-                stop
-            end if
 
             result = result / real(size-1)
             error = ABS(exact - result)/ exact
@@ -83,41 +64,35 @@ program MontyParallel
             write(1,*) N, error
             N = N * 2
         end do
+        ! once we've calcualted all  the results and written everything to file, we need to
+        ! end all processes
 
-    else
-        !receive task
-        write(*,*) rank, " waiting to receive task"
-        call MPI_RECV(Ni, 1, MPI_INTEGER, 0, counterR, MPI_COMM_WORLD, MPI_STATUS_IGNORE, err)
-        counterR = counterR + 1
-        write(*,*) rank, " received task of ", Ni
-
+        do i = 1, (size - 1),1
+            call MPI_SEND(-1, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)
+        end do
         stop
+    else
+        do 
+            !receive task
+            write(*,*) rank, " waiting to receive task"
+            call MPI_RECV(Ni, 1, MPI_INTEGER, 0, counterR, MPI_COMM_WORLD, MPI_STATUS_IGNORE, err)
+            counterR = counterR + 1
+            write(*,*) rank, " received task of ", Ni
 
-        !if error, stop 
-        if (err /= 0) then  
-            write(*,*) err
-            stop
-        end if
+            !if we receive Ni=-1, stop
+            if (Ni .eq. -1) then
+                stop
+            end if
 
-        !perform task
-        result = MonteCarloIntegrate(Ni)
-        write(*,*) rank, " performed task"
+            !perform task
+            result = MonteCarloIntegrate(Ni)
+            write(*,*) rank, " performed task with a result of: ", result
 
-        !if error, stop 
-        if (err /= 0) then  
-            write(*,*) err
-            stop
-        end if
+            !send back
+            call MPI_REDUCE(result, receive, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
+            write(*,*) rank, " sent back"
 
-        !send back
-        call MPI_REDUCE(result, receive, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
-        write(*,*) rank, " sent back"
-
-        !if error, stop 
-        if (err /= 0) then  
-            write(*,*) err
-            stop
-        end if
+        end do
     end if
 
 

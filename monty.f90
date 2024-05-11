@@ -25,14 +25,10 @@ program MontyParallel
 
     write(*,*) size
 
-    stop
-
     write(*,*) "hello world 3"
 
     Nmax = 100000000
     exact = 0.80656718084400884701112678335185691868951443065656
-    
-    open(unit = 1, file = "error vs N.dat", action = "write")
     
     N = 1
     
@@ -41,6 +37,7 @@ program MontyParallel
     tempSend = 0
 
     if (rank .eq. 0) then
+        open(unit = 1, file = "error vs N.dat", action = "write")
         do while(N<Nmax)
             !send out all the tasks
             write(*,*) rank, "sending out tasks"

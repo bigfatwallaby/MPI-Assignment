@@ -10,16 +10,20 @@ program MontyParallel
     integer :: Nmax, N, i, Ni, counterR, counterS
     integer rank, size, err
     
+    write(*,*) "hello world 1"
+
     call random_seed(size = seed_size)
     allocate(seed(seed_size))
     seed = 42
     call random_seed(put=seed)
     
+    write(*,*) "hello world 2"
+
     call MPI_INIT(err)
     call MPI_COMM_SIZE(MPI_COMM_WORLD, size, err)
     call MPI_COMM_RANK(MPI_COMM_WORLD, rank, err)
 
-    write(*,*) "hello world"
+    write(*,*) "hello world 3"
 
     Nmax = 100000000
     exact = 0.80656718084400884701112678335185691868951443065656

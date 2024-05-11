@@ -9,23 +9,19 @@ program MontyParallel
     real :: exact, error, receive, tempSend
     integer :: Nmax, N, i, ii, Ni, counterR, counterS
     integer rank, size, err
-    
-    write(*,*) "hello world 1"
 
     call random_seed(size = seed_size)
     allocate(seed(seed_size))
     seed = 42
     call random_seed(put=seed)
-    
-    write(*,*) "hello world 2"
 
     call MPI_INIT(err)
     call MPI_COMM_SIZE(MPI_COMM_WORLD, size, err)
     call MPI_COMM_RANK(MPI_COMM_WORLD, rank, err)
 
-    write(*,*) size
-
-    write(*,*) "hello world 3"
+    if (rank .eq. 0) then
+        write(*,*) size
+    end if
 
     Nmax = 100000000
     exact = 0.80656718084400884701112678335185691868951443065656
@@ -40,7 +36,7 @@ program MontyParallel
         open(unit = 1, file = "error vs N.dat", action = "write")
         do while(N<Nmax)
             !send out all the tasks
-            write(*,*) rank, "sending out tasks"
+            write(*,*) rank, "sending out tasks for N: ", N
             do i = 1, (size - 2),1
                 ii = i
                 Ni = floor(real(N)/(size-1))
@@ -92,7 +88,7 @@ program MontyParallel
         write(*,*) rank, " waiting to receive task"
         call MPI_RECV(Ni, 1, MPI_INTEGER, 0, counterR, MPI_COMM_WORLD, MPI_STATUS_IGNORE, err)
         counterR = counterR + 1
-        write(*,*) rank, " received task"
+        write(*,*) rank, " received task of " Ni
 
         stop
 

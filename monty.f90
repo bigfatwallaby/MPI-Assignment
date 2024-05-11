@@ -18,8 +18,6 @@ program MontyParallel
     call random_seed(put=seed)
     
     write(*,*) "hello world 2"
-    
-    stop
 
     call MPI_INIT(err)
     call MPI_COMM_SIZE(MPI_COMM_WORLD, size, err)

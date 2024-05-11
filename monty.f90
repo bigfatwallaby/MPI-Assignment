@@ -7,7 +7,7 @@ program MontyParallel
     real :: result
     real :: MonteCarloIntegrate
     real :: exact, error, receive, tempSend
-    integer :: Nmax, N, i, Ni, counterR, counterS
+    integer :: Nmax, N, i, ii, Ni, counterR, counterS
     integer rank, size, err
     
     write(*,*) "hello world 1"
@@ -41,10 +41,11 @@ program MontyParallel
             !send out all the tasks
             write(*,*) rank, "sending out tasks"
             do i = 1, (size - 2)
+                ii = i
                 Ni = floor(real(N)/(size-1))
                 !send chunks to ppl
                 write(*,*) rank, "sending ", Ni, " to ", i
-                call MPI_SEND(Ni, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)
+                call MPI_SEND(Ni, 1, MPI_INTEGER, ii, counterS, MPI_COMM_WORLD, err)
 
                 !if error, stop 
                 if (err /= 0) then  

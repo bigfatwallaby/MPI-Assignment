@@ -6,8 +6,8 @@ program MontyParallel
     integer, allocatable :: seed(:)
     real :: result
     real :: MonteCarloIntegrate
-    real :: exact, error
-    integer :: Nmax, N
+    real :: exact, error, receive, tempSend
+    integer :: Nmax, N, i, Ni, counterR, counterS
     integer rank, size, err
     
     call random_seed(size = seed_size)
@@ -26,17 +26,48 @@ program MontyParallel
     
     N = 1
     
-    do while(N<Nmax)
-        result = MonteCarloIntegrate(N)
-        error = ABS(exact - result)/ exact
-        write(1,*) N, error
-        !N = ((N+1) * 1.1)
-        N = N * 2
-    end do
+    counterS = 0
+    counterR = 0
+    tempSend = 0
+
+    if (rank .eq. 0) then
+        do while(N<Nmax)
+            !send out all the tasks
+            do i, 1, (size - 2)
+                Ni = floor(real(N)/(size-1))
+                !send chunks to ppl
+                call MPI_SEND(Ni, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)
+
+
+            end do
+            ! send remainder to last guy
+            call MPI_SEND(N-Ni*(size-1), 1, MPI_INTEGER, (size - 1), counterS, MPI_COMM_WORLD, err)
+
+            counterS = counterS + 1
+
+            ! recieve all results
+            call MPI_REDUCE(tempSend, result, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
+
+            result = result / real(size-1)
+            error = ABS(exact - result)/ exact
+            write(1,*) N, error
+            N = N * 2
+        end do
+
+    else
+        !receive task
+        call MPI_RECV(Ni, 1, MPI_INTEGER, 0, counterR, MPI_COMM_WORLD, MPI_STATUS_IGNORE, err)
+        counterR = counterR + 1
+
+        !perform task
+        result = MonteCarloIntegrate(Ni)
+
+        !send back
+        call MPI_REDUCE(result, receive, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
+    end if
+
 
     call MPI_FINALIZE(err) 
-  
-    
     end program MontyParallel
     
     real function rand()

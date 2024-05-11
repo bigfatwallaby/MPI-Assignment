@@ -19,6 +19,8 @@ program MontyParallel
     call MPI_COMM_SIZE(MPI_COMM_WORLD, size, err)
     call MPI_COMM_RANK(MPI_COMM_WORLD, rank, err)
 
+    write(*,*) "hello world"
+
     Nmax = 100000000
     exact = 0.80656718084400884701112678335185691868951443065656
     

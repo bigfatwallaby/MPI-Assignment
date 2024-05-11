@@ -62,12 +62,24 @@ program MontyParallel
             write(*,*) rank, "sending out ", N-Ni*(size-1), " to ",  (size - 1)
             call MPI_SEND(N-Ni*(size-1), 1, MPI_INTEGER, (size - 1), counterS, MPI_COMM_WORLD, err)
 
+            !if error, stop 
+            if (err /= 0) then  
+                write(*,*) err
+                stop
+            end if
+
             counterS = counterS + 1
 
             ! recieve all results
             write(*,*) rank, " waiting to receive all results"
             call MPI_REDUCE(tempSend, result, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
             write(*,*) rank, " received all results"
+
+            !if error, stop 
+            if (err /= 0) then  
+                write(*,*) err
+                stop
+            end if
 
             result = result / real(size-1)
             error = ABS(exact - result)/ exact
@@ -83,13 +95,31 @@ program MontyParallel
         counterR = counterR + 1
         write(*,*) rank, " received task"
 
+        !if error, stop 
+        if (err /= 0) then  
+            write(*,*) err
+            stop
+        end if
+
         !perform task
         result = MonteCarloIntegrate(Ni)
         write(*,*) rank, " performed task"
 
+        !if error, stop 
+        if (err /= 0) then  
+            write(*,*) err
+            stop
+        end if
+
         !send back
         call MPI_REDUCE(result, receive, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
         write(*,*) rank, " sent back"
+
+        !if error, stop 
+        if (err /= 0) then  
+            write(*,*) err
+            stop
+        end if
     end if
 
 

@@ -23,6 +23,9 @@ program MontyParallel
     call MPI_COMM_SIZE(MPI_COMM_WORLD, size, err)
     call MPI_COMM_RANK(MPI_COMM_WORLD, rank, err)
 
+    write(*,*) size
+
+
     write(*,*) "hello world 3"
 
     Nmax = 100000000
@@ -40,11 +43,11 @@ program MontyParallel
         do while(N<Nmax)
             !send out all the tasks
             write(*,*) rank, "sending out tasks"
-            do i = 1, (size - 2)
+            do i = 1, (size - 2),1
                 ii = i
                 Ni = floor(real(N)/(size-1))
                 !send chunks to ppl
-                write(*,*) rank, "sending ", Ni, " to ", i
+                write(*,*) rank, "sending ", Ni, " to ", ii
                 call MPI_SEND(Ni, 1, MPI_INTEGER, ii, counterS, MPI_COMM_WORLD, err)
 
                 !if error, stop 

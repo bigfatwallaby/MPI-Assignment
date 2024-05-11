@@ -10,20 +10,22 @@ program MontyParallel
     integer :: Nmax, N, i, Ni, counterR, counterS
     integer rank, size, err
     
-    print*, "hello world 1"
+    write(*,*) "hello world 1"
 
     call random_seed(size = seed_size)
     allocate(seed(seed_size))
     seed = 42
     call random_seed(put=seed)
     
-    print*, "hello world 2"
+    write(*,*) "hello world 2"
+    
+    stop
 
     call MPI_INIT(err)
     call MPI_COMM_SIZE(MPI_COMM_WORLD, size, err)
     call MPI_COMM_RANK(MPI_COMM_WORLD, rank, err)
 
-    print*, "hello world 3"
+    write(*,*) "hello world 3"
 
     Nmax = 100000000
     exact = 0.80656718084400884701112678335185691868951443065656
@@ -39,47 +41,47 @@ program MontyParallel
     if (rank .eq. 0) then
         do while(N<Nmax)
             !send out all the tasks
-            print*, rank, "sending out tasks"
+            write(*,*) rank, "sending out tasks"
             do i = 1, (size - 2)
                 Ni = floor(real(N)/(size-1))
                 !send chunks to ppl
-                print*, rank, "sending ", Ni, " to ", i
+                write(*,*) rank, "sending ", Ni, " to ", i
                 call MPI_SEND(Ni, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)
 
 
             end do
             ! send remainder to last guy
-            print*, rank, "sending out ", N-Ni*(size-1), " to ",  (size - 1)
+            write(*,*) rank, "sending out ", N-Ni*(size-1), " to ",  (size - 1)
             call MPI_SEND(N-Ni*(size-1), 1, MPI_INTEGER, (size - 1), counterS, MPI_COMM_WORLD, err)
 
             counterS = counterS + 1
 
             ! recieve all results
-            print*, rank, " waiting to receive all results"
+            write(*,*) rank, " waiting to receive all results"
             call MPI_REDUCE(tempSend, result, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
-            print*, rank, " received all results"
+            write(*,*) rank, " received all results"
 
             result = result / real(size-1)
             error = ABS(exact - result)/ exact
-            print*, rank, " result wrote to file"
+            write(*,*) rank, " result wrote to file"
             write(1,*) N, error
             N = N * 2
         end do
 
     else
         !receive task
-        print*, rank, " waiting to receive task"
+        write(*,*) rank, " waiting to receive task"
         call MPI_RECV(Ni, 1, MPI_INTEGER, 0, counterR, MPI_COMM_WORLD, MPI_STATUS_IGNORE, err)
         counterR = counterR + 1
-        print*, rank, " received task"
+        write(*,*) rank, " received task"
 
         !perform task
         result = MonteCarloIntegrate(Ni)
-        print*, rank, " performed task"
+        write(*,*) rank, " performed task"
 
         !send back
         call MPI_REDUCE(result, receive, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
-        print*, rank, " sent back"
+        write(*,*) rank, " sent back"
     end if
 
 

@@ -25,6 +25,7 @@ program MontyParallel
 
     write(*,*) size
 
+    stop
 
     write(*,*) "hello world 3"
 

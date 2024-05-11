@@ -43,6 +43,7 @@ program MontyParallel
                 !send chunks to ppl
                 write(*,*) rank, "sending ", Ni, " to ", ii
                 call MPI_SEND(Ni, 1, MPI_INTEGER, ii, counterS, MPI_COMM_WORLD, err)
+                write(*,*) rank, "i: ",i, "ii: ", ii
 
                 !if error, stop 
                 if (err /= 0) then  
@@ -88,7 +89,7 @@ program MontyParallel
         write(*,*) rank, " waiting to receive task"
         call MPI_RECV(Ni, 1, MPI_INTEGER, 0, counterR, MPI_COMM_WORLD, MPI_STATUS_IGNORE, err)
         counterR = counterR + 1
-        write(*,*) rank, " received task of " Ni
+        write(*,*) rank, " received task of ", Ni
 
         stop
 

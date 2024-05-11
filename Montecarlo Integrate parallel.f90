@@ -33,37 +33,47 @@ program MontyParallel
     if (rank .eq. 0) then
         do while(N<Nmax)
             !send out all the tasks
+            write(*,*) rank, "sending out tasks"
             do i = 1, (size - 2)
                 Ni = floor(real(N)/(size-1))
                 !send chunks to ppl
+                write(*,*) rank, "sending ", Ni, " to ", i
                 call MPI_SEND(Ni, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)
 
 
             end do
             ! send remainder to last guy
+            write(*,*) rank, "sending out ", N-Ni*(size-1), " to ",  (size - 1)
             call MPI_SEND(N-Ni*(size-1), 1, MPI_INTEGER, (size - 1), counterS, MPI_COMM_WORLD, err)
 
             counterS = counterS + 1
 
             ! recieve all results
+            write(*,*) rank, " waiting to receive all results"
             call MPI_REDUCE(tempSend, result, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
+            write(*,*) rank, " received all results"
 
             result = result / real(size-1)
             error = ABS(exact - result)/ exact
+            write(*,*) rank, " result wrote to file"
             write(1,*) N, error
             N = N * 2
         end do
 
     else
         !receive task
+        write(*,*) rank, " waiting to receive task"
         call MPI_RECV(Ni, 1, MPI_INTEGER, 0, counterR, MPI_COMM_WORLD, MPI_STATUS_IGNORE, err)
         counterR = counterR + 1
+        write(*,*) rank, " received task"
 
         !perform task
         result = MonteCarloIntegrate(Ni)
+        write(*,*) rank, " performed task"
 
         !send back
         call MPI_REDUCE(result, receive, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
+        write(*,*) rank, " sent back"
     end if
 
 

@@ -35,15 +35,14 @@ program MontyParallel
     end do
 
     call MPI_FINALIZE(err) 
-    
-    contains
-    
-      real(8) function rand()
-        call random_number(rand)
-      end function rand
+  
     
     end program MontyParallel
     
+    real function rand()
+        call random_number(rand)
+    end function rand
+
     real function g(x,y,z)
         implicit none
         real,intent(in) :: x,y,z
@@ -52,7 +51,7 @@ program MontyParallel
     
     real function MonteCarloIntegrate(N)
         integer, intent(in) :: N
-        real :: randX, randY, randZ
+        real :: randX, randY, randZ, rand
         real :: bigG, g, V
     
         bigG = 0

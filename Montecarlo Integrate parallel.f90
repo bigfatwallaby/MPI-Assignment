@@ -33,7 +33,7 @@ program MontyParallel
     if (rank .eq. 0) then
         do while(N<Nmax)
             !send out all the tasks
-            do i, 1, (size - 2)
+            do i = 1, (size - 2)
                 Ni = floor(real(N)/(size-1))
                 !send chunks to ppl
                 call MPI_SEND(Ni, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)

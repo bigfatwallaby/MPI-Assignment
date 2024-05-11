@@ -54,11 +54,12 @@ program MontyParallel
                     stop
                 end if
 
-
             end do
             ! send remainder to last guy
             write(*,*) rank, "sending out ", N-Ni*(size-1), " to ",  (size - 1)
             call MPI_SEND(N-Ni*(size-1), 1, MPI_INTEGER, (size - 1), counterS, MPI_COMM_WORLD, err)
+
+            stop
 
             !if error, stop 
             if (err /= 0) then  
@@ -92,6 +93,8 @@ program MontyParallel
         call MPI_RECV(Ni, 1, MPI_INTEGER, 0, counterR, MPI_COMM_WORLD, MPI_STATUS_IGNORE, err)
         counterR = counterR + 1
         write(*,*) rank, " received task"
+
+        stop
 
         !if error, stop 
         if (err /= 0) then  

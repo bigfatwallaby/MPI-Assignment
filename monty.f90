@@ -9,6 +9,7 @@ program MontyParallel
     real :: exact, error, receive, tempSend
     integer :: Nmax, N, i, Ni, counterR, counterS
     integer rank, size, err
+    real :: startTime, stopTime
 
     call random_seed(size = seed_size)
     allocate(seed(seed_size))
@@ -32,35 +33,37 @@ program MontyParallel
     counterR = 0
     tempSend = 0
 
+    call cpu_time(startTime)
+
     if (rank .eq. 0) then
         open(unit = 1, file = "error vs N.dat", action = "write")
         do while(N<Nmax)
             !send out all the tasks
-            write(*,*) rank, "sending out tasks for N: ", N
+            !write(*,*) rank, "sending out tasks for N: ", N
 
             do i = 1, (size - 2),1
                 Ni = floor(real(N)/(size-1))
                 !send chunks to ppl
-                write(*,*) rank, "sending ", Ni, " to ", i
+                !write(*,*) rank, "sending ", Ni, " to ", i
                 call MPI_SEND(Ni, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)
 
             end do
             ! send remainder to last guy
-            write(*,*) rank, "sending out ", N-Ni*(size-2), " to ",  (size - 1)
+            !write(*,*) rank, "sending out ", N-Ni*(size-2), " to ",  (size - 1)
             call MPI_SEND(N-Ni*(size-2), 1, MPI_INTEGER, (size - 1), counterS, MPI_COMM_WORLD, err)
 
 
             counterS = counterS + 1
 
             ! recieve all results
-            write(*,*) rank, " waiting to receive all results"
+            !write(*,*) rank, " waiting to receive all results"
             call MPI_REDUCE(tempSend, result, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
-            write(*,*) rank, " received all results", result
+            !write(*,*) rank, " received all results", result
 
 
             result = result / real(size-1)
             error = ABS(exact - result)/ exact
-            write(*,*) rank, " result wrote to file"
+            !write(*,*) rank, " result wrote to file"
             write(1,*) N, error
             N = N * 2
         end do
@@ -70,14 +73,19 @@ program MontyParallel
         do i = 1, (size - 1),1
             call MPI_SEND(-1, 1, MPI_INTEGER, i, counterS, MPI_COMM_WORLD, err)
         end do
+
+        call cpu_time(stopTime)
+
+        write(*,*) "time taken: ", stopTime-startTime
+
         stop
     else
         do 
             !receive task
-            write(*,*) rank, " waiting to receive task"
+            !write(*,*) rank, " waiting to receive task"
             call MPI_RECV(Ni, 1, MPI_INTEGER, 0, counterR, MPI_COMM_WORLD, MPI_STATUS_IGNORE, err)
             counterR = counterR + 1
-            write(*,*) rank, " received task of ", Ni
+            !write(*,*) rank, " received task of ", Ni
 
             !if we receive Ni=-1, stop
             if (Ni .eq. -1) then
@@ -86,11 +94,11 @@ program MontyParallel
 
             !perform task
             result = MonteCarloIntegrate(Ni)
-            write(*,*) rank, " performed task with a result of: ", result
+            !write(*,*) rank, " performed task with a result of: ", result
 
             !send back
             call MPI_REDUCE(result, receive, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, err)
-            write(*,*) rank, " sent back"
+            !write(*,*) rank, " sent back"
 
         end do
     end if
